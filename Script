@@ -1,0 +1,73 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Minecraft : MonoBehaviour
+{
+    public Vector2 cameraSpeed = new Vector2(180, 180);
+
+    private float pitch = 0;
+    private float yaw = 0;
+
+    public float moveSpeed = 10;
+    public GameObject blockPrefab;
+    public GameObject blockOutLine;
+
+    private RaycastHit hit;
+
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    
+    void Update()
+    {
+        pitch += -Input.GetAxis("Mouse Y") * cameraSpeed.x * Time.deltaTime;
+        yaw += Input.GetAxis("Mouse X") * cameraSpeed.y * Time.deltaTime;
+
+        Camera.main.transform.eulerAngles = new Vector3(pitch, yaw, 0);
+
+        float InputX = Input.GetAxis("Horizontal");
+        float InputY = Input.GetAxis("Fly");
+        float InputZ = Input.GetAxis("Vertical");
+
+        Vector3 dirFoward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
+        Vector3 dirSide = Camera.main.transform.right;
+        Vector3 dirUp = Vector3.up;
+
+        Vector3 moveDir = (InputX * dirSide) + (InputY * dirUp) + (InputZ * dirFoward);
+        Camera.main.transform.position += moveDir * moveSpeed * Time.deltaTime;
+
+        Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+        
+        if(Physics.Raycast(ray, out hit))
+        {
+            Vector3 pos = hit.point;
+
+            pos += hit.normal * 0.1f;
+            pos = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+            pos += Vector3.one * 0.5f;
+
+            blockOutLine.transform.position = pos;
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                Instantiate(blockPrefab, pos, Quaternion.identity);
+            }
+            if (Input.GetMouseButtonDown(1))
+            {
+                if(hit.collider.name == "Grama(clone)")
+                    Destroy(hit.collider.gameObject);
+            }
+        }
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 99999);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(hit.point, 0.05f);
+
+        Gizmos.DrawRay(hit.point, hit.normal);
+    }
+}
